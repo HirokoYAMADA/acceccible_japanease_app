@@ -1,87 +1,57 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import React from 'react'
 import { Send } from 'lucide-react'
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-type Message = {
-    id: string
-    content: string
-    sender: 'user' | 'ai'
-}
+import { useChat } from 'ai/react';
 
 export default function ChatBot() {
-    const [messages, setMessages] = useState<Message[]>([])
-    const [input, setInput] = useState('')
-
-    const handleSend = () => {
-        if (input.trim()) {
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                content: input.trim(),
-                sender: 'user',
-            }
-            setMessages([...messages, newMessage])
-            setInput('')
-            // Here you would typically send the message to your AI backend
-            // and then add the AI's response to the messages
-        }
-    }
+    const { messages, input, setInput, handleSubmit } = useChat({
+        api: '/api/chat/stream-text-generation'
+    });
 
     return (
-        <Card className="w-full max-w-2xl mx-auto h-[600px] flex flex-col">
+        <Card className="w-full max-w-2xl mx-auto">
             <CardHeader>
-                <CardTitle>AI Assistant Chat</CardTitle>
+                <CardTitle>AI チャットアシスタント</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow overflow-hidden">
-                <ScrollArea className="h-full">
+            <CardContent>
+                <ScrollArea className="h-[50vh] pr-4">
                     {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex items-start space-x-2 mb-4 ${message.sender === 'user' ? 'flex-row-reverse' : ''
-                                }`}
-                        >
-                            <Avatar>
-                                <AvatarImage src={message.sender === 'ai' ? "/ai-avatar.png" : "/user-avatar.png"} />
-                                <AvatarFallback>{message.sender === 'ai' ? 'AI' : 'You'}</AvatarFallback>
-                            </Avatar>
-                            <div
-                                className={`rounded-lg p-2 max-w-[70%] ${message.sender === 'user'
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-gray-200 text-gray-800'
-                                    }`}
-                            >
-                                {message.content}
+                        <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+                            <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start`}>
+                                <Avatar className="w-8 h-8">
+                                    <AvatarImage src={message.role === 'user' ? "/placeholder.svg?height=32&width=32" : "/placeholder.svg?height=32&width=32"} alt={message.role === 'user' ? "ユーザー" : "AI"} />
+                                    <AvatarFallback>{message.role === 'user' ? 'U' : 'AI'}</AvatarFallback>
+                                </Avatar>
+                                <div className={`mx-2 p-3 rounded-lg ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                                    {message.content}
+                                </div>
                             </div>
                         </div>
                     ))}
                 </ScrollArea>
             </CardContent>
             <CardFooter>
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault()
-                        handleSend()
-                    }}
-                    className="flex w-full items-center space-x-2"
-                >
+                <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
                     <Input
+                        type="text"
+                        placeholder="メッセージを入力..."
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type your message..."
                         className="flex-grow"
                     />
-                    <Button type="submit" size="lg">
+                    <Button type="submit" size="icon">
                         <Send className="h-4 w-4" />
-                        <span className="sr-only">Send</span>
+                        <span className="sr-only">送信</span>
                     </Button>
                 </form>
             </CardFooter>
         </Card>
     )
 }
-
